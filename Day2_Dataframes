@@ -1,0 +1,801 @@
+Day 10: - Go to page 10
+Day 9: Data frames:
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+1. Download the store_locations.json file from google drive
+2. create a directory in hadoop
+hadoopuser@hadoopuser-VirtualBox:~$ hdfs dfs -mkdir /sparkLabData
+hadoopuser@hadoopuser-VirtualBox:~$ hdfs dfs -ls /sparkLabData
+ 3. Copy the downloaded store_locations.json from desktop(local system) into hadoop
+
+hadoopuser@hadoopuser-VirtualBox:~$ hdfs dfs -copyFromLocal /home/hadoopuser/Desktop/store_locations.json /sparkLabData/
+hadoopuser@hadoopuser-VirtualBox:~$ hdfs dfs -ls /sparkLabData
+Found 1 items
+-rw-r--r--   1 hadoopuser supergroup       6053 2020-12-29 20:06 /sparkLabData/store_locations.json
+hadoopuser@hadoopuser-VirtualBox:~$ hdfs dfs -cat /sparkLabData/store_locations.json
+{"city": "Antioch", "state": "CA", "zip_code": 945097911}
+{"city": "Woodland", "state": "CA", "zip_code": 957765409}
+{"city": "San Jose", "state": "CA", "zip_code": 951311866}
+{"city": "Victorville", "state": "CA", "zip_code": 923954216}
+{"city": "Chico", "state": "CA", "zip_code": 959284422}
+
+1. Start the spark
+hadoopuser@hadoopuser-VirtualBox:~$ spark-shell
+scala> sc.setLogLevel("ERROR")
+
+2. Load the data
+
+scala> val storeDF = spark.read.format("json").load("/sparkLabData/store_locations.json")
+storeDF: org.apache.spark.sql.DataFrame = [city: string, state: string ... 1 more field]
+
+3. see the data in dataframe
+
+scala> storeDF.collect
+res1: Array[org.apache.spark.sql.Row] = Array([Antioch,CA,945097911], [Woodland,CA,957765409], [San Jose,CA,951311866], [Victorville,CA,923954216], [Chico,CA,959284422], [San Dimas,CA,917731725], [Visalia,CA,932779527], [Manteca,CA,953366745], [Redwood City,CA,940632854], [Lakewood,CA,907122409], [Hayward,CA,945455008], [Pacoima,CA,913312352], [San Marcos,CA,92069], [Lodi,CA,95240], [Huntington Beach,CA,92647], [Westlake Village,CA,913624063], [San Leandro,CA,945771209], [Woodland Hills,CA,913672227], [El Centro,CA,922431323], [Tustin,CA,927828918], [Vista,CA,920814546], [Eureka,CA,955012121], [Garden Grove,CA,928431206], [Simi Valley,CA,930656207], [Santa Clara,CA,950503100], [Los Angeles,CA,900391502], [SandCity,CA,939553051], [Vallejo,CA,945913702], [Redding,CA,960034071], [Clovis,CA...
+
+OR
+
+scala> storeDF.show(5)
++-----------+-----+---------+
+|       city|state| zip_code|
++-----------+-----+---------+
+|    Antioch|   CA|945097911|
+|   Woodland|   CA|957765409|
+|   San Jose|   CA|951311866|
+|Victorville|   CA|923954216|
+|      Chico|   CA|959284422|
++-----------+-----+---------+
+only showing top 5 rows
+
+4. To see the schema
+
+scala> storeDF.schema or storeDF.printSchema
+res3: org.apache.spark.sql.types.StructType = StructType(StructField(city,StringType,true), StructField(state,StringType,true), StructField(zip_code,LongType,true))
+
+5. Manually Define Schema
+
+scala> import org.apache.spark.sql.types.Metadata
+import org.apache.spark.sql.types.Metadata
+
+scala> import org.apache.spark.sql.types.{StructType,StructField,StringType,LongType}
+import org.apache.spark.sql.types.{StructType, StructField, StringType, LongType}
+
+scala> val manualSchema = StructType(Array(StructField("city",StringType,true), StructField("state",StringType,true), StructField("zip_code",LongType,true)))
+manualSchema: org.apache.spark.sql.types.StructType = StructType(StructField(city,StringType,true), StructField(state,StringType,true), StructField(zip_code,LongType,true))
+
+scala> val storeDF = spark.read.format("json").schema(manualSchema).load("/sparkLabData/store_locations.json")
+storeDF: org.apache.spark.sql.DataFrame = [city: string, state: string ... 1 more field]
+
+scala> storeDF.show(5)
++-----------+-----+---------+
+|       city|state| zip_code|
++-----------+-----+---------+
+|    Antioch|   CA|945097911|
+|   Woodland|   CA|957765409|
+|   San Jose|   CA|951311866|
+|Victorville|   CA|923954216|
+|      Chico|   CA|959284422|
++-----------+-----+---------+
+only showing top 5 rows
+
+6. To see all the columns in dataframe
+
+scala> storeDF.columns
+res12: Array[String] = Array(city, state, zip_code)
+
+scala> storeDF.col("city")
+res16: org.apache.spark.sql.Column = city
+
+7. To see Rows in Dataframe
+
+scala> storeDF.take(5)
+res21: Array[org.apache.spark.sql.Row] = Array([Antioch,CA,945097911], [Woodland,CA,957765409], [San Jose,CA,951311866], [Victorville,CA,923954216], [Chico,CA,959284422])
+
+scala> storeDF.collect()
+res17: Array[org.apache.spark.sql.Row] = Array([Antioch,CA,945097911], [Woodland,CA,957765409], [San Jose,CA,951311866], [Victorville,CA,923954216], [Chico,CA,959284422], [San Dimas,CA,917731725], [Visalia,CA,932779527], [Manteca,CA,953366745], [Redwood City,CA,940632854], [Lakewood,CA,907122409], [Hayward,CA,945455008], [Pacoima,CA,913312352], [San Marcos,CA,92069], [Lodi,CA,95240], [Huntington Beach,CA,92647], [Westlake Village,CA,913624063], [San Leandro,CA,945771209], [Woodland Hills,CA,913672227], [El Centro,CA,922431323], [Tustin,CA,927828918], [Vista,CA,920814546], [Eureka,CA,955012121], [Garden Grove,CA,928431206], [Simi Valley,CA,930656207], [Santa Clara,CA,950503100], [Los Angeles,CA,900391502], [SandCity,CA,939553051], [Vallejo,CA,945913702], [Redding,CA,960034071], [Clovis,C...
+scala> storeDF.show()
++----------------+-----+---------+
+|            city|state| zip_code|
++----------------+-----+---------+
+|         Antioch|   CA|945097911|
+|        Woodland|   CA|957765409|
+|        San Jose|   CA|951311866|
+|     Victorville|   CA|923954216|
+|           Chico|   CA|959284422|
+|       San Dimas|   CA|917731725|
+|         Visalia|   CA|932779527|
+|         Manteca|   CA|953366745|
+|    Redwood City|   CA|940632854|
+|        Lakewood|   CA|907122409|
+|         Hayward|   CA|945455008|
+|         Pacoima|   CA|913312352|
+|      San Marcos|   CA|    92069|
+|            Lodi|   CA|    95240|
+|Huntington Beach|   CA|    92647|
+|Westlake Village|   CA|913624063|
+|     San Leandro|   CA|945771209|
+|  Woodland Hills|   CA|913672227|
+|       El Centro|   CA|922431323|
+|          Tustin|   CA|927828918|
++----------------+-----+---------+
+only showing top 20 rows
+
+
+scala> storeDF.first
+res19: org.apache.spark.sql.Row = [Antioch,CA,945097911]
+
+# to see all
+scala> storeDF.show(storeDF.count().toInt)
++-------------------+-----+---------+
+|               city|state| zip_code|
++-------------------+-----+---------+
+|            Antioch|   CA|945097911|
+|           Woodland|   CA|957765409|
+|           San Jose|   CA|951311866|
+|        Victorville|   CA|923954216|
+
+Day 10
+1.	Load the data in Data Frame
+scala> val storeDF = spark.read.format("json").load("/sparkLabData/store_locations.json")
+
+2.	Create a view
+scala> storeDF.createOrReplaceTempView("storeDFView")
+
+3.	Query the data from view
+scala> spark.sql("select * from storeDFView").show(5)
+
+scala> spark.sql("""select * from storeDFView""").show(5)
+
++-----------+-----+---------+
+|       city|state| zip_code|
++-----------+-----+---------+
+|    Antioch|   CA|945097911|
+|   Woodland|   CA|957765409|
+|   San Jose|   CA|951311866|
+|Victorville|   CA|923954216|
+|      Chico|   CA|959284422|
++-----------+-----+---------+
+only showing top 5 rows
+
+4.	Create a dataframe directly from the data
+scala> val studDF = Seq((1,"name A","Std 5"),(2,"name B","Std 5"),(3,"name C","Std 5"),(4,"name D","Std 5"),(5,"name E","Std 5")).toDF("RollNo", "Name", "Std")
+studDF: org.apache.spark.sql.DataFrame = [RollNo: int, Name: string ... 1 more field]
+
+scala> studDF.show(5)
++------+------+-----+
+|RollNo|  Name|  Std|
++------+------+-----+
+|     1|name A|Std 5|
+|     2|name B|Std 5|
+|     3|name C|Std 5|
+|     4|name D|Std 5|
+|     5|name E|Std 5|
++------+------+-----+
+---------------------5.	Query some columns in---------------------------------------------------------------------------------------------------
+a.	Dataframe
+scala> storeDF.select("city").show(5)
++-----------+
+|       city|
++-----------+
+|    Antioch|
+|   Woodland|
+|   San Jose|
+|Victorville|
+|      Chico|
++-----------+
+only showing top 5 rows
+
+b.	Sql
+scala> spark.sql("""select city from storeDFView""").show(5)
++-----------+
+|       city|
++-----------+
+|    Antioch|
+|   Woodland|
+|   San Jose|
+|Victorville|
+|      Chico|
++-----------+
+only showing top 5 rows
+
+c.	Dataframe (2 columns)
+scala> storeDF.select("city","state").show(5)
++-----------+-----+
+|       city|state|
++-----------+-----+
+|    Antioch|   CA|
+|   Woodland|   CA|
+|   San Jose|   CA|
+|Victorville|   CA|
+|      Chico|   CA|
++-----------+-----+
+only showing top 5 rows
+d.	Sql (2 columns)
+scala> spark.sql("""select city,state from storeDFView""").show(5)
++-----------+-----+
+|       city|state|
++-----------+-----+
+|    Antioch|   CA|
+|   Woodland|   CA|
+|   San Jose|   CA|
+|Victorville|   CA|
+|      Chico|   CA|
++-----------+-----+
+only showing top 5 rows
+
+e.	Selecting the columns in different ways
+scala> storeDF.select("city").show(1)
+scala> storeDF.select(storeDF.col("city")).show(1)
+scala> storeDF.select(column("city")).show(1)
+scala> storeDF.select(col("city")).show(1)
+scala> storeDF.select(expr("city")).show(1)
+scala> storeDF.select($"city").show(1)
+
+f.	Alias - Dataframe
+
+scala> storeDF.select(col("city").alias("city_name")).show(1)
++---------+
+|city_name|
++---------+
+|  Antioch|
++---------+
+only showing top 1 row
+
+
+scala> storeDF.select(expr("city").alias("city_name")).show(1)
++---------+
+|city_name|
++---------+
+|  Antioch|
++---------+
+only showing top 1 row
+
+
+scala> storeDF.select(expr("city AS city_name")).show(1)
++---------+
+|city_name|
++---------+
+|  Antioch|
++---------+
+only showing top 1 row
+
+
+scala> storeDF.selectExpr("city AS city_name").show(1)
++---------+
+|city_name|
++---------+
+|  Antioch|
++---------+
+only showing top 1 row
+
+g.	Alias – SQL view
+scala> spark.sql("""select city as city_name from storeDFView""").show(1)
++---------+
+|city_name|
++---------+
+|  Antioch|
++---------+
+only showing top 1 row
+-----------------------------------2. Giving a fixed value-------------------------------------------------------------------------------------
+a. dataframe
+scala> storeDF.select(expr("*"), lit("United States").as("country")).show(5)
++-----------+-----+---------+-------------+
+|       city|state| zip_code|      country|
++-----------+-----+---------+-------------+
+|    Antioch|   CA|945097911|United States|
+|   Woodland|   CA|957765409|United States|
+|   San Jose|   CA|951311866|United States|
+|Victorville|   CA|923954216|United States|
+|      Chico|   CA|959284422|United States|
++-----------+-----+---------+-------------+
+only showing top 5 rows
+
+b. SQL – view
+scala> spark.sql("""select *,"United States" as country from storeDFView""").show(1)
++-------+-----+---------+-------------+
+|   city|state| zip_code|      country|
++-------+-----+---------+-------------+
+|Antioch|   CA|945097911|United States|
++-------+-----+---------+-------------+
+only showing top 1 row
+
+c. Another way in DataFrame – withColumn
+
+c.1 add a new column country
+
+scala> storeDF.withColumn("country", lit("United States")).show(5)
++-----------+-----+---------+-------------+
+|       city|state| zip_code|      country|
++-----------+-----+---------+-------------+
+|    Antioch|   CA|945097911|United States|
+|   Woodland|   CA|957765409|United States|
+|   San Jose|   CA|951311866|United States|
+|Victorville|   CA|923954216|United States|
+|      Chico|   CA|959284422|United States|
++-----------+-----+---------+-------------+
+only showing top 5 rows
+
+--------------------------------c.2 one hot encoding----------------------------------------------------------------------------------------
+city
+state
+zip_code
+country
+is_ Antioch = true – 1 /false – 0
+
+scala> storeDF.withColumn("is_Antioch", expr("city == 'Antioch'")).show(5)
++-----------+-----+---------+----------+
+|       city|state| zip_code|is_Antioch|
++-----------+-----+---------+----------+
+|    Antioch|   CA|945097911|      true|
+|   Woodland|   CA|957765409|     false|
+|   San Jose|   CA|951311866|     false|
+|Victorville|   CA|923954216|     false|
+|      Chico|   CA|959284422|     false|
++-----------+-----+---------+----------+
+only showing top 5 rows
+-----3. withColumnRenamed – alias (SQL select city as city_name from table)-------------------------------------------------------------------------------------------------------------------
+
+scala> storeDF.withColumnRenamed("city", "city_name").show(5)
++-----------+-----+---------+
+|  city_name|state| zip_code|
++-----------+-----+---------+
+|    Antioch|   CA|945097911|
+|   Woodland|   CA|957765409|
+|   San Jose|   CA|951311866|
+|Victorville|   CA|923954216|
+|      Chico|   CA|959284422|
++-----------+-----+---------+
+only showing top 5 rows
+
+Used a lot, when you are interfacing with Microsoft system where people like to create column names in tables having space in between the column name. eg: column name is “city name”
+
+scala> val storeDFwithColNameSpace = storeDF.withColumnRenamed("city", "city name")
+storeDFwithColNameSpace: org.apache.spark.sql.DataFrame = [city name: string, state: string ... 1 more field]
+
+scala> storeDFwithColNameSpace.show(1)
++---------+-----+---------+
+|city name|state| zip_code|
++---------+-----+---------+
+|  Antioch|   CA|945097911|
++---------+-----+---------+
+only showing top 1 row
+
+
+scala> val storeDFWithColNameNoSpaces = storeDFwithColNameSpace.withColumnRenamed("city name", "city")
+storeDFWithColNameNoSpaces: org.apache.spark.sql.DataFrame = [city: string, state: string ... 1 more field]
+
+scala> storeDFWithColNameNoSpaces.show(1)
++-------+-----+---------+
+|   city|state| zip_code|
++-------+-----+---------+
+|Antioch|   CA|945097911|
++-------+-----+---------+
+only showing top 1 row
+
+B. QUERY THE DATA IN SQL FOR VIEW/DATAFRAME HAVING COLUMN NAMES WITH SPACES
+
+scala> storeDFwithColNameSpace.createOrReplaceTempView("storeDFwithColNameSpace")
+
+scala> spark.sql("""select * from storeDFwithColNameSpace""").show(1)
++---------+-----+---------+
+|city name|state| zip_code|
++---------+-----+---------+
+|  Antioch|   CA|945097911|
++---------+-----+---------+
+only showing top 1 row
+` is below the esc key on the keyboard/ beside numeric 1 key on the keyboard
+scala> spark.sql("""select `city name` from storeDFwithColNameSpace""").show(1)
++---------+
+|city name|
++---------+
+|  Antioch|
++---------+
+only showing top 1 row
+
+-----------4. spark is not case-sensitive by default. Example below:----------------------------------------------------------------------------
+scala> spark.sql("""select CiTy from storeDFView""").show(1)
++-------+
+|   CiTy|
++-------+
+|Antioch|
++-------+
+only showing top 1 row
+
+Make case sensitive
+scala> spark.conf.set("spark.sql.caseSensitive", true)
+scala> spark.sql("set spark.sql.caseSensitive=true")
+--------------------------------------------6.	Drop columns----------------------------------------------------------------------------
+
+
+scala> storeDF.drop("city").show(1)
++-----+---------+
+|state| zip_code|
++-----+---------+
+|   CA|945097911|
++-----+---------+
+only showing top 1 row
+
+
+scala> storeDF.drop("city", "state").show(1)
++---------+
+| zip_code|
++---------+
+|945097911|
++---------+
+only showing top 1 row
+--------------------------------------7. Change data type – type casting    WITH_COLUMN----------------------------------------------------------------------------------
+
+
+scala> storeDF.withColumn("zip_code",col("zip_code").cast("int")).show(5)
++-----------+-----+---------+
+|       city|state| zip_code|
++-----------+-----+---------+
+|    Antioch|   CA|945097911|
+|   Woodland|   CA|957765409|
+|   San Jose|   CA|951311866|
+|Victorville|   CA|923954216|
+|      Chico|   CA|959284422|
++-----------+-----+---------+
+only showing top 5 rows
+
+
+scala> storeDF.withColumn("zip_code",col("zip_code").cast("int")).printSchema
+root
+ |-- city: string (nullable = true)
+ |-- state: string (nullable = true)
+ |-- zip_code: integer (nullable = true)
+
+
+scala> storeDF.withColumn("zip_code_Int",col("zip_code").cast("int")).show(5)
++-----------+-----+---------+------------+
+|       city|state| zip_code|zip_code_Int|
++-----------+-----+---------+------------+
+|    Antioch|   CA|945097911|   945097911|
+|   Woodland|   CA|957765409|   957765409|
+|   San Jose|   CA|951311866|   951311866|
+|Victorville|   CA|923954216|   923954216|
+|      Chico|   CA|959284422|   959284422|
++-----------+-----+---------+------------+
+only showing top 5 rows
+
+
+scala> storeDF.withColumn("zip_code_Int",col("zip_code").cast("int")).printSchema
+root
+ |-- city: string (nullable = true)
+ |-- state: string (nullable = true)
+ |-- zip_code: long (nullable = true)
+ |-- zip_code_Int: integer (nullable = true)
+
+Cast is usedful specially if you are working with timestamps eg “2012-12-25 23:12:52.000” as it may be interpreted as string by default and you may want to convert it to daytimestamp
+----------------------------------8. Where and Filter-------------------------------------------------------------------------------------------------------------------------
+
+A.	Dataframe
+scala> storeDF.where("city == 'Woodland'").show(2)
++--------+-----+---------+
+|    city|state| zip_code|
++--------+-----+---------+
+|Woodland|   CA|957765409|
++--------+-----+---------+
+
+
+scala> storeDF.filter("city == 'Woodland'").show(2)
++--------+-----+---------+
+|    city|state| zip_code|
++--------+-----+---------+
+|Woodland|   CA|957765409|
++--------+-----+---------+
+
+B.	View – sql
+
+scala> spark.sql("""select * from storeDFView where city = 'Woodland'""").show(1)
++--------+-----+---------+
+|    city|state| zip_code|
++--------+-----+---------+
+|Woodland|   CA|957765409|
++--------+-----+---------+
+
+
+scala> spark.sql("""select * from storeDFView where city = "Woodland"""").show(1)
++--------+-----+---------+
+|    city|state| zip_code|
++--------+-----+---------+
+|Woodland|   CA|957765409|
++--------+-----+---------+
+
+C.	Dataframe – and
+Option 1:
+scala> storeDF.where("city == 'Woodland'").where("state == 'CA'").show(2)
++--------+-----+---------+
+|    city|state| zip_code|
++--------+-----+---------+
+|Woodland|   CA|957765409|
++--------+-----+---------+
+
+Option 2:
+scala> storeDF.filter($"city" === a && $"state" === b).show(2)
++--------+-----+---------+
+|    city|state| zip_code|
++--------+-----+---------+
+|Woodland|   CA|957765409|
++--------+-----+---------+
+
+D.	View - SQL – and
+scala> spark.sql("""select * from storeDFView where city = "Woodland" and state = "CA"""").show(1)
++--------+-----+---------+
+|    city|state| zip_code|
++--------+-----+---------+
+|Woodland|   CA|957765409|
++--------+-----+---------+
+
+E.	Dataframe – OR
+
+Option 2:
+scala> storeDF.filter($"city" === a || $"state" === b).show(5)
++-----------+-----+---------+
+|       city|state| zip_code|
++-----------+-----+---------+
+|    Antioch|   CA|945097911|
+|   Woodland|   CA|957765409|
+|   San Jose|   CA|951311866|
+|Victorville|   CA|923954216|
+|      Chico|   CA|959284422|
++-----------+-----+---------+
+only showing top 5 rows
+
+F.	View - SQL – and
+scala> spark.sql("""select * from storeDFView where city = "Woodland" or  state = "CA"""").show(5)
+
++-----------+-----+---------+
+|       city|state| zip_code|
++-----------+-----+---------+
+|    Antioch|   CA|945097911|
+|   Woodland|   CA|957765409|
+|   San Jose|   CA|951311866|
+|Victorville|   CA|923954216|
+|      Chico|   CA|959284422|
++-----------+-----+---------+
+only showing top 5 rows
+
+
+
+--------------------------------------------9.Distinct Values and Count---------------------------------------------------------------------------------------------------------------
+
+A.	Dataframe
+Example 1:
+scala> storeDF.select("state").distinct().show(5)
++-----+
+|state|
++-----+
+|   CA|
++-----+
+
+Example 2:
+scala> storeDF.select("city").distinct().count()
+res5: Long = 89
+
+B.	Sql – view
+
+scala> spark.sql("""select distinct(state) from storeDFView""").show(5)
++-----+
+|state|
++-----+
+|   CA|
++-----+
+
+
+scala> spark.sql("""select count(distinct(city)) from storeDFView""").show(5)
++--------------------+
+|count(DISTINCT city)|
++--------------------+
+|                  89|
++--------------------+
+-----------------------------------------------10.	Sampling------------------------------------------------------------------------------------------------------------
+
+storeDF.sample(true – withReplacement – true/false, .2 – fraction/sampleSize ,30 – seed ).show(5)
+scala> storeDF.sample(true, .2,30).show(5)
++------------+-----+---------+
+|        city|state| zip_code|
++------------+-----+---------+
+| Victorville|   CA|923954216|
+|       Chico|   CA|959284422|
+|   San Dimas|   CA|917731725|
+|Redwood City|   CA|940632854|
+|Garden Grove|   CA|928431206|
++------------+-----+---------+
+only showing top 5 rows
+--------------------------11.	Split – ML : train and test dataset---------------------------------------------------------------------------------------------------------------------------------
+
+scala> val trainTestStoreDF = storeDF.randomSplit(Array(0.70,0.30), 30)
+trainTestStoreDF: Array[org.apache.spark.sql.Dataset[org.apache.spark.sql.Row]] = Array([city: string, state: string ... 1 more field], [city: string, state: string ... 1 more field])
+
+-
+scala> trainTestStoreDF(0).show(6)
++-----------+-----+---------+
+|       city|state| zip_code|
++-----------+-----+---------+
+|   Alhambra|   CA|918031302|
+|    Antioch|   CA|945097911|
+|      Azusa|   CA|917022819|
+|Bakersfield|   CA|933133479|
+|   Carlsbad|   CA|920111110|
+|      Chico|   CA|959284422|
++-----------+-----+---------+
+only showing top 6 rows
+
+-
+scala> trainTestStoreDF(1).show(5)
++----------------+-----+---------+
+|            city|state| zip_code|
++----------------+-----+---------+
+|         Burbank|   CA|915061421|
+|        Commerce|   CA|900402513|
+|          Corona|   CA|928791291|
+|Huntington Beach|   CA|    92647|
+|          Irvine|   CA|926182408|
++----------------+-----+---------+
+only showing top 5 rows
+--------------12.	Append Data to a data frame---------------------------------------------------------------------------------------------------------------------------------------------
+Union
+A.	Preparing some data
+scala> val storeAntioch = storeDF.filter("city == 'Antioch'")
+storeAntioch: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] = [city: string, state: string ... 1 more field]
+
+scala> storeAntioch.show(5)
++-------+-----+---------+
+|   city|state| zip_code|
++-------+-----+---------+
+|Antioch|   CA|945097911|
++-------+-----+---------+
+
+
+scala> val storeWoodland = storeDF.filter("city == 'Woodland'")
+storeWoodland: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] = [city: string, state: string ... 1 more field]
+
+scala> storeWoodland.show(5)
++--------+-----+---------+
+|    city|state| zip_code|
++--------+-----+---------+
+|Woodland|   CA|957765409|
++--------+-----+---------+
+
+
+B.	Union
+scala> val storeAntWood = storeAntioch.union(storeWoodland)
+storeAntWood: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] = [city: string, state: string ... 1 more field]
+
+scala> storeAntWood.show(5)
++--------+-----+---------+
+|    city|state| zip_code|
++--------+-----+---------+
+| Antioch|   CA|945097911|
+|Woodland|   CA|957765409|
++--------+-----+---------+
+
+
+----------------13.	orderBy---------------------------------------------------------------------------------------------------------------------------------------------
+a.	dataframe
+scala> storeDF.orderBy("city").show(5)
++-----------+-----+---------+
+|       city|state| zip_code|
++-----------+-----+---------+
+|   Alhambra|   CA|918031302|
+|    Antioch|   CA|945097911|
+|      Azusa|   CA|917022819|
+|Bakersfield|   CA|933133479|
+|    Burbank|   CA|915061421|
++-----------+-----+---------+
+only showing top 5 rows
+
+scala> storeDF.orderBy(desc("city")).show(5)
++----------------+-----+---------+
+|            city|state| zip_code|
++----------------+-----+---------+
+|     Yorba Linda|   CA|928874664|
+|  Woodland Hills|   CA|913672227|
+|        Woodland|   CA|957765409|
+|Westlake Village|   CA|913624063|
+|           Vista|   CA|920814546|
++----------------+-----+---------+
+only showing top 5 rows
+
+b.	sql
+
+scala> spark.sql("""select * from storeDFView order by city""").show(5)
++-----------+-----+---------+
+|       city|state| zip_code|
++-----------+-----+---------+
+|   Alhambra|   CA|918031302|
+|    Antioch|   CA|945097911|
+|      Azusa|   CA|917022819|
+|Bakersfield|   CA|933133479|
+|    Burbank|   CA|915061421|
++-----------+-----+---------+
+only showing top 5 rows
+
+
+scala> spark.sql("""select * from storeDFView order by city desc""").show(5)
++----------------+-----+---------+
+|            city|state| zip_code|
++----------------+-----+---------+
+|     Yorba Linda|   CA|928874664|
+|  Woodland Hills|   CA|913672227|
+|        Woodland|   CA|957765409|
+|Westlake Village|   CA|913624063|
+|           Vista|   CA|920814546|
++----------------+-----+---------+
+only showing top 5 rows
+
+---------------14.	Repartition---------------------------------------------------------------------------------------------------------------------------------------------
+(INCREASE/DECREASE NO OF PARTITION, COMPLETE SHUFFLE – SO HEAVY) and Coalesce(ONLY DECREASE NO OF PARTITION, AVOID SHUFFLE - FAST)
+REFER TO RDD
+
+a.	Repartitioning to 5 partitions
+scala> val rePartitionedStoreDF = storeDF.repartition(5)
+rePartitionedStoreDF: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] = [city: string, state: string ... 1 more field]
+
+scala> rePartitionedStoreDF.rdd.getNumPartitions
+res29: Int = 5
+
+b.	Repartitioning to 5 partitions on basis of city
+
+scala> val rePartitionedStoreDFOnCity = storeDF.repartition(5,col("city"))
+rePartitionedStoreDFOnCity: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] = [city: string, state: string ... 1 more field]
+
+scala> rePartitionedStoreDFOnCity.rdd.getNumPartitions
+res30: Int = 5
+
+C.	Using coalesce to reduce number of partitions
+scala> val coalesceStoreDF = rePartitionedStoreDFOnCity.coalesce(2)
+coalesceStoreDF: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] = [city: string, state: string ... 1 more field]
+
+scala> coalesceStoreDF.rdd.glom().collect()
+res32: Array[Array[org.apache.spark.sql.Row]] = Array(Array([Antioch,CA,945097911], [Woodland,CA,957765409], [San Jose,CA,951311866], [Victorville,CA,923954216], [San Dimas,CA,917731725], [Visalia,CA,932779527], [Hayward,CA,945455008], [Pacoima,CA,913312352], [Woodland Hills,CA,913672227], [Vista,CA,920814546], [SandCity,CA,939553051], [Vallejo,CA,945913702], [Mountain View,CA,940431716], [San Jose,CA,951122627], [Fresno,CA,937226200], [Azusa,CA,917022819], [Oxnard,CA,930361813], [South San Francisco,CA,940806909], [San Juan Capistrano,CA,926754836], [Rancho Cordova,CA,957426571], [Yorba Linda,CA,928874664], [Irvine,CA,926182408], [Carlsbad,CA,920111110], [Sacramento,CA,958239606], [La Mesa,CA,919422934], [San Jose,CA,951183603], [Sacramento,CA,958154228], [South San Francisco,CA,940801...
+scala> coalesceStoreDF.rdd.getNumPartitions
+res33: Int = 2
+
+-------------15.	Convert dataframe into RDD and convert back RDD to Data frame---------------------------------------------------------------------------------------------------------------------------------------------
+-	NOTE: INCASE OF RDD, YOU LOSE THE SCHEMA, BCOZ THAT IS FLAT STRUCTURE, WHERE YOU REFER TO ELEMENTS AS R._1, R._2, …. YOU DON’T HAVE COLUMN NAMES IN RDD
+
+scala> import org.apache.spark.sql.types.{StructType,StructField,StringType,LongType}
+import org.apache.spark.sql.types.{StructType, StructField, StringType, LongType}
+
+scala> val manualSchema = StructType(Array(StructField("city",StringType,true), StructField("state",StringType,true), StructField("zip_code",LongType,true)))
+manualSchema: org.apache.spark.sql.types.StructType = StructType(StructField(city,StringType,true), StructField(state,StringType,true), StructField(zip_code,LongType,true))
+
+scala>
+
+scala> storeDF.rdd
+res39: org.apache.spark.rdd.RDD[org.apache.spark.sql.Row] = MapPartitionsRDD[157] at rdd at <console>:27
+
+scala> spark.createDataFrame(res39, manualSchema)
+res40: org.apache.spark.sql.DataFrame = [city: string, state: string ... 1 more field]
+
+scala> res40.show()
++----------------+-----+---------+
+|            city|state| zip_code|
++----------------+-----+---------+
+|         Antioch|   CA|945097911|
+|        Woodland|   CA|957765409|
+
+
+-------------------16.	Make Row-> Make RDD -> Make DF---------------------------------------------------------------------------------------------------------------------------------------------
+
+scala> val someRows = Seq(Row("abc","xyz",1234567891L))
+someRows: Seq[org.apache.spark.sql.Row] = List([abc,xyz,1234567891])
+
+scala> val someRDD = sc.parallelize(someRows)
+someRDD: org.apache.spark.rdd.RDD[org.apache.spark.sql.Row] = ParallelCollectionRDD[180] at parallelize at <console>:30
+
+scala> someRDD.collect
+res47: Array[org.apache.spark.sql.Row] = Array([abc,xyz,1234567891])
+
+scala> val manualSchema = StructType(Array(StructField("city",StringType,true), StructField("state",StringType,true), StructField("zip_code",LongType,true)))
+
+scala> val someDF = spark.createDataFrame(someRDD, manualSchema)
+someDF: org.apache.spark.sql.DataFrame = [city: string, state: string ... 1 more field]
+
+scala> someDF.show(1)
++----+-----+----------+
+|city|state|  zip_code|
++----+-----+----------+
+| abc|  xyz|1234567891|
++----+-----+----------+
